@@ -1,0 +1,3 @@
+# MNIST_SAMPLE
+
+足し算

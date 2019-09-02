@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>たしざん</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<body>
+  <div class="container">
+    <div id="output" class="text-center h2"></div>
+    <div class="text-center">
+      <canvas id="draw-area" width="280" height="280" style="border: 2px solid;"></canvas>
+      </br>
+      <button type="button" id="button" class="btn btn-primary" onclick="check()" disabled>確認</button>
+      </br>
+      <p id="load">モデルのロード中</p>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.js"></script>
+  <script src="problem.js"></script>
+  <script src="imodel.js"></script>
+  <script src="icanvas.js"></script>
+  <script>
+    // 問題を生成
+    const problem = new Problem();
+    problem.gen();
+    document.getElementById("output").innerHTML = `${problem.x} + ${problem.y} = `;
+    // canvasを定義
+    const cv = new Icanvas(document.getElementById('draw-area'), new SignaturePad(document.getElementById('draw-area'), {
+      minWidth: 6,
+      maxWidth: 6,
+      penColor: 'white',
+      backgroundColor: 'black',
+    }));
+    // モデルを定義
+    const model = new Imodel();
+    model.load('http://192.168.1.14:3000/model/model.json').then(() => {
+      // 最初のpredictに時間がかかるので空回し
+      const imageData = cv.getImageData(28, 28);
+      model.prediction(imageData);
+      document.getElementById('load').parentNode.removeChild(document.getElementById('load'));
+      document.getElementById('button').removeAttribute('disabled');
+    });
+    // 関数checkを定義
+    const check = () => {
+      document.getElementById('button').disabled = true;
+      const imageData = cv.getImageData(28, 28);
+      const num = model.prediction(imageData);
+      if (problem.check(num)) {
+        alert(`正解！あなたは${num}と答えました。`)
+      } else {
+        alert(`残念！答えは${problem.ans}でした。あなたは${num}と答えました。`)
+      }
+      cv.reset();
+      problem.gen();
+      document.getElementById("output").innerHTML = `${problem.x} + ${problem.y} = `;
+      document.getElementById('button').disabled = false;
+    }
+  </script>
+</body>
+</html>
